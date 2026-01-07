@@ -30,8 +30,10 @@ function App() {
           </Card>
         ) : (
           <CardHeader>
-            <CardTitle>To get started Connect a wallet</CardTitle>
-            <Vote />
+            <CardContent className="flex flex-col gap-10 pt-6">
+              <Vote />
+              <CardTitle>To get started Connect a wallet</CardTitle>
+            </CardContent>
           </CardHeader>
         )}
       </div>
