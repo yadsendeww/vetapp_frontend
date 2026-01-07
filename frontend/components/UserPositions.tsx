@@ -26,7 +26,7 @@ export function UserPositions() {
   };
   const groupedTokens = tokens.reduce((acc, token) => {
     let name = token.current_token_data?.token_name ?? token.token_data_id;
-    name = name.slice(1, 67);
+    name = name.split("_")[0].slice(1);
     const key = shorten(name);
     const entry = acc.get(key);
     if (entry) {

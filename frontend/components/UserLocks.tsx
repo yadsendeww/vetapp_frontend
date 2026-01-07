@@ -1,8 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useWallet } from "@aptos-labs/wallet-adapter-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocks } from "@/hooks/useLocks";
 import { toast } from "@/components/ui/use-toast";
 import { aptosClient } from "@/utils/aptosClient";
 import { VETAPP_ACCOUNT_ADDRESS } from "@/constants";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { createLock } from "@/entry-functions/createLock";
 
 type PoolVotesProps = {
   tokenAddress: string;
@@ -86,7 +91,12 @@ function PoolVotes({ tokenAddress, onCopy, shorten }: PoolVotesProps) {
 }
 
 export function UserLocks() {
+  const { account, signAndSubmitTransaction } = useWallet();
+  const queryClient = useQueryClient();
   const { data, isFetching } = useLocks();
+  const [lockValue, setLockValue] = useState("");
+  const [lockDuration, setLockDuration] = useState("");
+  const [isLockSubmitting, setIsLockSubmitting] = useState(false);
 
   const tokens = data?.tokens ?? [];
   const shorten = (s: string) => `${s.slice(0, 6)}...${s.slice(-4)}`;
@@ -99,12 +109,89 @@ export function UserLocks() {
       });
     }
   };
+
+  const onCreateLock = async () => {
+    if (!account || isLockSubmitting) {
+      return;
+    }
+
+    const trimmedValue = lockValue.trim();
+    const trimmedDuration = lockDuration.trim();
+    const isValueValid = /^\d+$/.test(trimmedValue);
+    const isDurationValid = /^\d+$/.test(trimmedDuration);
+
+    if (!isValueValid || !isDurationValid) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Value and lock duration must be whole numbers.",
+      });
+      return;
+    }
+
+    try {
+      setIsLockSubmitting(true);
+      const committedTransaction = await signAndSubmitTransaction(
+        createLock({ value: trimmedValue, lockDuration: trimmedDuration }),
+      );
+      const executedTransaction = await aptosClient().waitForTransaction({
+        transactionHash: committedTransaction.hash,
+      });
+      queryClient.invalidateQueries({ queryKey: ["user-locks", account.address] });
+      toast({
+        title: "Success",
+        description: `Transaction succeeded, hash: ${executedTransaction.hash}`,
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to create lock.",
+      });
+    } finally {
+      setIsLockSubmitting(false);
+    }
+  };
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-4">
         <h4 className="text-lg font-medium">User locks</h4>
         <div className="text-xs text-muted-foreground">
           Collection address: {data?.collectionAddress ?? "unknown"}
+        </div>
+      </div>
+      <div className="flex flex-col gap-2 text-xs">
+        <div className="text-sm font-medium">Create lock</div>
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-muted-foreground">Value (u64)</span>
+            <Input
+              className="h-7 w-40 text-xs"
+              inputMode="numeric"
+              placeholder="e.g. 100000000"
+              value={lockValue}
+              onChange={(event) => setLockValue(event.target.value)}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-muted-foreground">Lock duration (seconds)</span>
+            <Input
+              className="h-7 w-56 text-xs"
+              inputMode="numeric"
+              placeholder="e.g. 604800"
+              value={lockDuration}
+              onChange={(event) => setLockDuration(event.target.value)}
+            />
+          </div>
+          <Button
+            size="sm"
+            className="h-7 px-2 text-xs"
+            disabled={!account || isLockSubmitting}
+            onClick={onCreateLock}
+          >
+            {isLockSubmitting ? "Creating..." : "Create Lock"}
+          </Button>
         </div>
       </div>
       {!isFetching && tokens.length === 0 ? (

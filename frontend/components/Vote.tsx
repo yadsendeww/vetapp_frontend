@@ -145,6 +145,12 @@ export function Vote() {
       functionName: "create_pools",
     },
     {
+      key: "add-liqs",
+      label: "Add Liqs",
+      functionName: "add_liqs",
+    },
+
+    {
       key: "swaps-pools",
       label: "Swaps Pools",
       functionName: "swaps_pools",
