@@ -167,26 +167,30 @@ function PoolTokenRow({
     ? `[${claimableData.map((value) => formatNumber8(value)).join(", ")}]`
     : "0";
   return (
-    <span className="pl-4 text-xs">
-      PositionID #{Number.isFinite(positionIdx) ? positionIdx : "unknown"}:<span>  </span>
-      <code
-        className="border border-input rounded px-2 py-1"
-        onClick={() => onCopy(token.token_data_id)}
-      >
-        {shorten(token.token_data_id)}
-      </code>
-      <span className="ml-2">
-        Earned fees:{" "}
-        {canFetchClaimable ? (claimableFetching ? "Loading..." : claimableDisplay) : "unknown"}
-      </span>
-      <Button
-        size="sm"
-        className="ml-2 h-7 px-2 text-xs"
-        disabled={!isWalletReady || isSubmitting}
-        onClick={() => onCommit(poolAddress, token.token_data_id)}
-      >
-        Commit
-      </Button>
-    </span>
+    <div className="text-xs pl-4 flex flex-col gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span>PositionID #{positionIdx}</span>
+        <code
+          className="border border-input rounded px-2 py-1"
+          onClick={() => onCopy(token.token_data_id)}
+        >
+          {shorten(token.token_data_id)}
+        </code>
+        <Button
+          size="sm"
+          className="h-7 px-2 text-xs"
+          disabled={!isWalletReady || isSubmitting}
+          onClick={() => onCommit(poolAddress, token.token_data_id)}
+        >
+          Commit
+        </Button>
+      </div>
+      <div className="flex items-center gap-2 flex-wrap">
+        <span>
+          Earned fees:{" "}
+          {canFetchClaimable ? (claimableFetching ? "Loading..." : claimableDisplay) : "unknown"}
+        </span>
+      </div>
+    </div>
   );
 }
