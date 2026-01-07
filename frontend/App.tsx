@@ -31,6 +31,7 @@ function App() {
         ) : (
           <CardHeader>
             <CardTitle>To get started Connect a wallet</CardTitle>
+            <Vote />
           </CardHeader>
         )}
       </div>
