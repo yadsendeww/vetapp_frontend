@@ -7,6 +7,7 @@ import { formatNumber8 } from "@/utils/format";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { updatePeriod } from "@/entry-functions/updatePeriod";
+import { QuickAccess } from "@/components/QuickAccess";
 
 type EpochView = string | number | bigint;
 
@@ -41,6 +42,7 @@ export function Vote() {
   const { account, signAndSubmitTransaction } = useWallet();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [adminSubmittingKey, setAdminSubmittingKey] = useState<string | null>(null);
   const { data, isFetching, isError } = useQuery({
     queryKey: ["helper-ve-epochs"],
     enabled: Boolean(VETAPP_ACCOUNT_ADDRESS),
@@ -131,13 +133,69 @@ export function Vote() {
     }
   };
 
+  const actions = [
+    {
+      key: "create-time-and-epoch",
+      label: "Create Time + Epoch",
+      functionName: "create_time_and_epoch",
+    },
+    {
+      key: "create-pools",
+      label: "Create Pools",
+      functionName: "create_pools",
+    },
+    {
+      key: "swaps-pools",
+      label: "Swaps Pools",
+      functionName: "swaps_pools",
+    },
+    {
+      key: "distribute-gauges",
+      label: "Distribute Gauges",
+      functionName: "distribute_gauges",
+    },
+  ];
+
+  const runAction = async (functionName: string, key: string) => {
+    if (!account || adminSubmittingKey) {
+      return;
+    }
+
+    try {
+      setAdminSubmittingKey(key);
+      const committedTransaction = await signAndSubmitTransaction({
+        data: {
+          function: `${VETAPP_ACCOUNT_ADDRESS}::helper_ve::${functionName}`,
+          functionArguments: [],
+        },
+      });
+      const executedTransaction = await aptosClient().waitForTransaction({
+        transactionHash: committedTransaction.hash,
+      });
+      toast({
+        title: "Success",
+        description: `Transaction succeeded, hash: ${executedTransaction.hash}`,
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: `Failed to run ${functionName}.`,
+      });
+    } finally {
+      setAdminSubmittingKey(null);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <h4 className="text-lg font-medium">Vote epochs</h4>
+      <QuickAccess />
       {isFetching || !data ? (
         <div className="text-sm text-muted-foreground">Loading...</div>
       ) : (
-        <div className="grid gap-2 text-sm">
+        <div className="grid gap-2 text-xs">
           <div>
             Epoch start: {toDisplay(data.epochStart)} · Epoch next: {toDisplay(data.epochNext)}
           </div>
@@ -146,13 +204,34 @@ export function Vote() {
           </div>
           <div>
             Active period: {toDisplay(data.activePeriod)} · Epoch count: {data.epochCount as number}
-            <Button className="ml-2" size="sm" disabled={!account || isSubmitting} onClick={onUpdatePeriod}>
+            <Button
+              className="ml-2 h-7 px-2 text-xs"
+              size="sm"
+              disabled={!account || isSubmitting}
+              onClick={onUpdatePeriod}
+            >
               {isSubmitting ? "Updating..." : "Update Period"}
             </Button>
           </div>
           <div>Weekly emission: {formatNumber8(data.weeklyEmission)}</div>
         </div>
       )}
+      <div className="flex flex-col gap-3">
+        <div className="text-lg font-medium"></div>
+        <div className="flex flex-wrap gap-2 text-xs">
+          {actions.map((action) => (
+            <Button
+              key={action.key}
+              size="sm"
+              className="h-7 px-2 text-xs"
+              disabled={!account || Boolean(adminSubmittingKey)}
+              onClick={() => runAction(action.functionName, action.key)}
+            >
+              {adminSubmittingKey === action.key ? "Running..." : action.label}
+            </Button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

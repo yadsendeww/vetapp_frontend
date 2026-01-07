@@ -148,7 +148,7 @@ function PoolTokenRow({
   const tokenName = token.current_token_data?.token_name ?? "";
   const positionIdx = Number(tokenName.split("_")[1]);
   return (
-    <span className="pl-4">
+    <span className="pl-4 text-xs">
       PositionID #{Number.isFinite(positionIdx) ? positionIdx : "unknown"}:<span>  </span>
       <code
         className="border border-input rounded px-2 py-1"
@@ -157,8 +157,8 @@ function PoolTokenRow({
         {shorten(token.token_data_id)}
       </code>
       <Button
-        className="ml-2"
         size="sm"
+        className="ml-2 h-7 px-2 text-xs"
         disabled={!isWalletReady || isSubmitting}
         onClick={() => onCommit(poolAddress, token.token_data_id)}
       >

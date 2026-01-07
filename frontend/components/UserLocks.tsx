@@ -51,25 +51,25 @@ function PoolVotes({ tokenAddress, onCopy, shorten }: PoolVotesProps) {
   });
 
   if (!VETAPP_ACCOUNT_ADDRESS) {
-    return <span className="text-sm text-muted-foreground">VETAPP address not configured.</span>;
+    return <span className="text-xs text-muted-foreground">VETAPP address not configured.</span>;
   }
 
   if (isFetching) {
-    return <span className="text-sm text-muted-foreground">Loading votes...</span>;
+    return <span className="text-xs text-muted-foreground">Loading votes...</span>;
   }
 
   const voted = data?.voted ?? false;
   const pools = data?.pools ?? [];
   if (pools.length === 0) {
     return (
-      <span className="text-sm text-muted-foreground">
+      <span className="text-xs text-muted-foreground">
         Voted this epoch: {voted ? "Yes" : "No"} · No voted pools.
       </span>
     );
   }
 
   return (
-    <div className="text-sm flex flex-col gap-1 pl-4">
+    <div className="text-xs flex flex-col gap-1 pl-4">
       <span className={voted ? "text-emerald-600" : "text-red-600"}>{voted ? "Voted" : "Not voted"}</span>
       <ul className="list-disc pl-6">
         {pools.map((pool) => (
@@ -103,15 +103,15 @@ export function UserLocks() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-4">
         <h4 className="text-lg font-medium">User locks</h4>
-        <div className="text-sm text-muted-foreground">
+        <div className="text-xs text-muted-foreground">
           Collection address: {data?.collectionAddress ?? "unknown"}
         </div>
       </div>
       {!isFetching && tokens.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No tokens found for this collection.</p>
+        <p className="text-xs text-muted-foreground">No tokens found for this collection.</p>
       ) : null}
       {tokens.length > 0 ? (
-        <div className="text-sm flex flex-col gap-3">
+        <div className="text-xs flex flex-col gap-3">
           <div className="flex flex-col gap-2">
             {tokens.map((token) => (
               <div key={token.token_data_id} className="flex flex-col gap-2">

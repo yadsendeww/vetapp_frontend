@@ -5,6 +5,7 @@ import { useGauge } from "@/hooks/useGauge";
 import { GAUGE_ACCOUNT_ADDRESS, VETAPP_ACCOUNT_ADDRESS } from "@/constants";
 import { toast } from "@/components/ui/use-toast";
 import { aptosClient } from "@/utils/aptosClient";
+import { formatNumber8 } from "@/utils/format";
 import { Button } from "@/components/ui/button";
 import { gaugeUncommit } from "@/entry-functions/gaugeUncommit";
 
@@ -57,6 +58,39 @@ export function Gauge() {
     }
   };
 
+  const onClaimReward = async (poolAddress: string, positionIdx: number) => {
+    if (!account || isSubmitting || !Number.isFinite(positionIdx)) {
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const committedTransaction = await signAndSubmitTransaction({
+        data: {
+          function: `${VETAPP_ACCOUNT_ADDRESS}::voter::claim_rewards`,
+          functionArguments: [[poolAddress], [positionIdx]],
+        },
+      });
+      const executedTransaction = await aptosClient().waitForTransaction({
+        transactionHash: committedTransaction.hash,
+      });
+      queryClient.invalidateQueries({ queryKey: ["gauge-earned", poolAddress, positionIdx] });
+      toast({
+        title: "Success",
+        description: `Transaction succeeded, hash: ${executedTransaction.hash}`,
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to claim reward.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (!VETAPP_ACCOUNT_ADDRESS) {
     return <div className="text-sm text-muted-foreground">VETAPP address not configured.</div>;
   }
@@ -87,7 +121,7 @@ export function Gauge() {
             const tokens = poolTokens[poolKey] ?? [];
 
             return (
-              <div key={poolKey} className="text-sm flex flex-col gap-2">
+              <div key={poolKey} className="text-xs flex flex-col gap-2">
                 <h3>
                   <span>Pool: </span>
                   <code
@@ -96,6 +130,7 @@ export function Gauge() {
                   >
                     {shorten(poolAddress)}
                   </code>
+                  <RewardPerToken poolAddress={poolAddress} />
                 </h3>
                 {tokens.length === 0 ? (
                   <p className="text-muted-foreground">No positions for this pool.</p>
@@ -107,6 +142,7 @@ export function Gauge() {
                         token={token}
                         onCopy={onCopy}
                         onUncommit={onUncommit}
+                        onClaimReward={onClaimReward}
                         poolAddress={poolAddress}
                         shorten={shorten}
                         isSubmitting={isSubmitting}
@@ -136,16 +172,44 @@ type PoolTokenRowProps = {
   token: PoolToken;
   onCopy: (value: string) => void;
   onUncommit: (poolAddress: string, positionAddress: string) => void;
+  onClaimReward: (poolAddress: string, positionIdx: number) => void;
   poolAddress: string;
   shorten: (value: string) => string;
   isSubmitting: boolean;
   isWalletReady: boolean;
 };
 
+type RewardPerTokenProps = {
+  poolAddress: string;
+};
+
+function RewardPerToken({ poolAddress }: RewardPerTokenProps) {
+  const { data, isFetching } = useQuery({
+    queryKey: ["gauge-reward-per-token", poolAddress],
+    enabled: Boolean(GAUGE_ACCOUNT_ADDRESS),
+    queryFn: async (): Promise<string | number | bigint> => {
+      const result = await aptosClient().view<[string | number | bigint]>({
+        payload: {
+          function: `${GAUGE_ACCOUNT_ADDRESS}::gauge::reward_per_token`,
+          functionArguments: [poolAddress],
+        },
+      });
+      return result[0];
+    },
+  });
+
+  return (
+    <span className="ml-2">
+      Reward per LP token: {isFetching ? "Loading..." : `${data ?? 0}`}
+    </span>
+  );
+}
+
 function PoolTokenRow({
   token,
   onCopy,
   onUncommit,
+  onClaimReward,
   poolAddress,
   shorten,
   isSubmitting,
@@ -167,30 +231,44 @@ function PoolTokenRow({
     },
   });
   return (
-    <span className="pl-4">
-      PositionID #{Number.isFinite(positionIdx) ? positionIdx : "unknown"}:<span>  </span>
-      <code
-        className="border border-input rounded px-2 py-1"
-        onClick={() => onCopy(token.token_data_id)}
-      >
-        {shorten(token.token_data_id)}
-      </code>
-      <span className="ml-2">
-        Earned:{" "}
-        {Number.isFinite(positionIdx)
-          ? earnedFetching
-            ? "Loading..."
-            : `${earnedData ?? 0}`
-          : "unknown"}
-      </span>
-      <Button
-        className="ml-2"
-        size="sm"
-        disabled={!isWalletReady || isSubmitting}
-        onClick={() => onUncommit(poolAddress, token.token_data_id)}
-      >
-        Uncommit
-      </Button>
-    </span>
+    <div className="text pl-4 flex flex-col gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span>
+          PositionID #{Number.isFinite(positionIdx) ? positionIdx : "unknown"}:
+        </span>
+        <code
+          className="border border-input rounded px-2 py-1"
+          onClick={() => onCopy(token.token_data_id)}
+        >
+          {shorten(token.token_data_id)}
+        </code>
+        <Button
+          size="sm"
+          className="h-7 px-2 text-xs"
+          disabled={!isWalletReady || isSubmitting}
+          onClick={() => onUncommit(poolAddress, token.token_data_id)}
+        >
+          Uncommit
+        </Button>
+      </div>
+      <div className="flex items-center gap-2 flex-wrap">
+        <span>
+          Earned $TAPP:{" "}
+          {Number.isFinite(positionIdx)
+            ? earnedFetching
+              ? "Loading..."
+              : formatNumber8(earnedData ?? 0)
+            : "unknown"}
+        </span>
+        <Button
+          size="sm"
+          className="h-7 px-2 text-xs"
+          disabled={!isWalletReady || isSubmitting || !Number.isFinite(positionIdx)}
+          onClick={() => onClaimReward(poolAddress, positionIdx)}
+        >
+          Get reward
+        </Button>
+      </div>
+    </div>
   );
 }
