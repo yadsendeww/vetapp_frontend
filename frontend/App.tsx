@@ -5,7 +5,7 @@ import { Header } from "@/components/Header";
 import { UserPositions } from "@/components/UserPositions";
 import { UserLocks } from "./components/UserLocks";
 import { Vote } from "@/components/Vote";
-import { Gauge } from "@/components/Gauge";
+import { Gauge } from "@/components/gauge/Gauge";
 
 function App() {
   const { connected } = useWallet();

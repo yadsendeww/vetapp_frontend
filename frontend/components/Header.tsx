@@ -11,7 +11,7 @@ export function Header() {
         <h1 className="display">ve(3,3) TAPP</h1>
         {showCommitInfo ? (
           <span className="text-xs text-muted-foreground">
-            Built commit {commitHash} — {commitMessage}
+            <b>Built commit</b> {commitHash} — {commitMessage}
           </span>
         ) : null}
       </div>
