@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { updatePeriod } from "@/entry-functions/updatePeriod";
 import { QuickAccess } from "./QuickAccess";
 import { deriveVaultAddress } from "@/utils/helpers";
+import { toastTransactionSuccess } from "@/utils/transactionToast";
 
 type EpochView = string | number | bigint;
 
@@ -118,10 +119,7 @@ export function Vote() {
         transactionHash: committedTransaction.hash,
       });
       queryClient.invalidateQueries({ queryKey: ["helper-ve-epochs"] });
-      toast({
-        title: "Success",
-        description: `Transaction succeeded, hash: ${executedTransaction.hash}`,
-      });
+      toastTransactionSuccess(executedTransaction.hash);
     } catch (error) {
       console.error(error);
       toast({
@@ -179,10 +177,7 @@ export function Vote() {
       const executedTransaction = await aptosClient().waitForTransaction({
         transactionHash: committedTransaction.hash,
       });
-      toast({
-        title: "Success",
-        description: `Transaction succeeded, hash: ${executedTransaction.hash}`,
-      });
+      toastTransactionSuccess(executedTransaction.hash);
     } catch (error) {
       console.error(error);
       toast({

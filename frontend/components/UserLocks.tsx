@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { createLock } from "@/entry-functions/createLock";
 import { vote } from "@/entry-functions/vote";
+import { toastTransactionSuccess } from "@/utils/transactionToast";
 
 type PoolVotesProps = {
   tokenAddress: string;
@@ -107,10 +108,7 @@ function PoolVotes({ tokenAddress, onCopy, shorten }: PoolVotesProps) {
         transactionHash: committedTransaction.hash,
       });
       queryClient.invalidateQueries({ queryKey: ["pool-votes", tokenAddress] });
-      toast({
-        title: "Success",
-        description: `Transaction succeeded, hash: ${executedTransaction.hash}`,
-      });
+      toastTransactionSuccess(executedTransaction.hash);
     } catch (error) {
       console.error(error);
       toast({
@@ -245,10 +243,7 @@ export function UserLocks() {
         transactionHash: committedTransaction.hash,
       });
       queryClient.invalidateQueries({ queryKey: ["user-locks", account.address] });
-      toast({
-        title: "Success",
-        description: `Transaction succeeded, hash: ${executedTransaction.hash}`,
-      });
+      toastTransactionSuccess(executedTransaction.hash);
     } catch (error) {
       console.error(error);
       toast({
@@ -279,7 +274,7 @@ export function UserLocks() {
   return (
     <div className="flex w-full min-w-0 flex-col gap-6">
       <div className="flex min-w-0 items-center justify-between gap-4">
-        <h4 className="text-lg font-medium">User locks</h4>
+        <h4 className="text-lg font-medium">Locks</h4>
         <div className="min-w-0 break-all text-xs text-muted-foreground">
           Collection address: {data?.collectionAddress ?? "unknown"}
         </div>
@@ -323,7 +318,7 @@ export function UserLocks() {
       {tokens.length > 0 ? (
         <div className="text-xs flex min-w-0 flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
-            <div className="text-sm font-medium">Your locks</div>
+            <div className="text-sm font-medium">My locks</div>
             <div className="flex gap-2">
               <Button
                 size="sm"

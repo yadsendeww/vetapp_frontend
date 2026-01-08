@@ -32,7 +32,7 @@ export function GaugePool({
   isWalletReady,
 }: GaugePoolProps) {
   return (
-    <Card className="border-muted-foreground shadow-sm">
+    <Card className="text-xs border-muted-foreground shadow-sm">
       <CardContent className="flex flex-col gap-2">
         <h3 className="flex items-center gap-2">
           <b>Pool: </b>

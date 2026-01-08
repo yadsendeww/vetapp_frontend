@@ -76,7 +76,7 @@ export function UserPositions() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-4">
-        <h4 className="text-lg font-medium">User positions</h4>
+        <h4 className="text-lg font-medium">My positions</h4>
         <div className="text-sm text-muted-foreground">
           Collection address: {data?.collectionAddress ?? "unknown"}
         </div>
