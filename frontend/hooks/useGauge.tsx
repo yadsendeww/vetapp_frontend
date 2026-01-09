@@ -13,17 +13,16 @@ type PoolToken = {
 
 type GaugeQueryResult = {
   pools: string[];
-  collectionAddress: string | null;
-  poolTokens: Record<string, PoolToken[]>;
+  committedPositions: Record<string, PoolToken[]>;
 };
 
 export function useGauge() {
   return useQuery({
-    queryKey: ["gauge-pools"],
+    queryKey: ["gauges"],
     enabled: Boolean(VETAPP_ACCOUNT_ADDRESS && TAPP_ACCOUNT_ADDRESS),
     queryFn: async (): Promise<GaugeQueryResult> => {
       if (!VETAPP_ACCOUNT_ADDRESS || !TAPP_ACCOUNT_ADDRESS) {
-        return { pools: [], collectionAddress: null, poolTokens: {} };
+        return { pools: [], committedPositions: {} };
       }
       const vaultAddress = deriveVaultAddress(TAPP_ACCOUNT_ADDRESS, "VAULT");
       const collectionAddress = deriveCollectionAddress(vaultAddress, "TAPP").toString();
@@ -43,12 +42,12 @@ export function useGauge() {
           return [poolAddress.toLowerCase(), tokens] as const;
         }),
       );
-      const poolTokens = poolTokensEntries.reduce<Record<string, PoolToken[]>>((acc, [poolAddress, tokens]) => {
+      const committedPositions = poolTokensEntries.reduce<Record<string, PoolToken[]>>((acc, [poolAddress, tokens]) => {
         acc[poolAddress] = tokens;
         return acc;
       }, {});
 
-      return { pools, collectionAddress, poolTokens };
+      return { pools, committedPositions };
     },
   });
 }

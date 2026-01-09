@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUserPositions } from "@/hooks/useUserPositions";
+import { usePool } from "@/hooks/usePool";
 import { AMM_ACCOUNT_ADDRESS } from "@/constants";
 import { toast } from "@/components/ui/use-toast";
 import { aptosClient } from "@/utils/aptosClient";
@@ -14,6 +15,7 @@ export function UserPositions() {
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { data, isFetching } = useUserPositions();
+  const { getPoolMetaSummary } = usePool();
 
   const tokens = data?.tokens ?? [];
   const shorten = (s: string) => `${s.slice(0, 6)}...${s.slice(-4)}`;
@@ -97,6 +99,9 @@ export function UserPositions() {
                   >
                     {key}
                   </code>
+                  <span className="text-xs text-muted-foreground">
+                    {getPoolMetaSummary(group.name)}
+                  </span>
                 </h3>
 
                 {group.tokens.map((token) => (

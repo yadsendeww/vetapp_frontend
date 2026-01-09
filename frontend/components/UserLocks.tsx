@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { createLock } from "@/entry-functions/createLock";
 import { vote } from "@/entry-functions/vote";
 import { toastTransactionSuccess } from "@/utils/transactionToast";
+import { useGauge } from "@/hooks/useGauge";
 
 type PoolVotesProps = {
   tokenAddress: string;
@@ -19,30 +20,32 @@ type PoolVotesProps = {
 
 function PoolVotes({ tokenAddress, onCopy, shorten }: PoolVotesProps) {
   const { account, signAndSubmitTransaction } = useWallet();
+  const { data: gaugeData, isFetching: isGaugeFetching } = useGauge();
   const queryClient = useQueryClient();
   const [weightInputs, setWeightInputs] = useState<Record<string, string>>({});
   const [isVoting, setIsVoting] = useState(false);
-  const { data, isFetching } = useQuery({
-    queryKey: ["pool-votes", tokenAddress],
-    enabled: Boolean(VETAPP_ACCOUNT_ADDRESS),
+  const { data: voteData, isFetching: isVoteFetching } = useQuery({
+    queryKey: ["pool-votes", tokenAddress, gaugeData?.pools?.length ?? 0],
+    enabled: Boolean(VETAPP_ACCOUNT_ADDRESS) && !isGaugeFetching,
     queryFn: async (): Promise<{
       voted: boolean;
       pools: { address: string; weight: string | number | bigint }[];
     }> => {
-      const [votedResult, poolsResult] = await Promise.all([
-        aptosClient().view<[boolean]>({
-          payload: {
-            function: `${VETAPP_ACCOUNT_ADDRESS}::vetapp::voted`,
-            functionArguments: [tokenAddress],
-          },
-        }),
-        aptosClient().view<[string[]]>({
-          payload: {
-            function: `${VETAPP_ACCOUNT_ADDRESS}::voter::pools`,
-          },
-        }),
-      ]);
-      const pools = poolsResult[0] ?? [];
+      if (!VETAPP_ACCOUNT_ADDRESS) {
+        return { voted: false, pools: [] };
+      }
+      const votedResult = await aptosClient().view<[boolean]>({
+        payload: {
+          function: `${VETAPP_ACCOUNT_ADDRESS}::vetapp::voted`,
+          functionArguments: [tokenAddress],
+        },
+      });
+      const voted = votedResult[0] ?? false;
+      if (!voted) {
+        return { voted, pools: [] };
+      }
+
+      const pools = gaugeData?.pools ?? [];
       const weights = await Promise.all(
         pools.map((pool) =>
           aptosClient().view<[string | number | bigint]>({
@@ -54,15 +57,13 @@ function PoolVotes({ tokenAddress, onCopy, shorten }: PoolVotesProps) {
         ),
       );
       const poolsWithWeights = pools.map((pool, index) => ({ address: pool, weight: weights[index][0] }));
-      return {
-        voted: votedResult[0],
-        pools: poolsWithWeights,
-      };
+      return { voted, pools: poolsWithWeights };
     },
   });
 
-  const voted = data?.voted ?? false;
-  const pools = data?.pools ?? [];
+  const voted = voteData?.voted ?? false;
+  const votedPools = voteData?.pools ?? [];
+  const pools = gaugeData?.pools ?? [];
   useEffect(() => {
     if (pools.length === 0) {
       return;
@@ -70,14 +71,14 @@ function PoolVotes({ tokenAddress, onCopy, shorten }: PoolVotesProps) {
     setWeightInputs((prev) => {
       const next: Record<string, string> = {};
       pools.forEach((pool) => {
-        next[pool.address] = prev[pool.address] ?? "";
+        next[pool] = prev[pool] ?? "";
       });
       return next;
     });
   }, [pools]);
 
   const weightSelections = pools
-    .map((pool) => ({ address: pool.address, weight: (weightInputs[pool.address] ?? "").trim() }))
+    .map((pool) => ({ address: pool, weight: (weightInputs[pool] ?? "").trim() }))
     .filter((entry) => entry.weight !== "");
   const totalWeight = weightSelections.reduce((sum, entry) => sum + BigInt(entry.weight), 0n);
   const canVote = weightSelections.length > 0 && !isVoting;
@@ -125,13 +126,13 @@ function PoolVotes({ tokenAddress, onCopy, shorten }: PoolVotesProps) {
     return <span className="text-xs text-muted-foreground">VETAPP address not configured.</span>;
   }
 
-  if (isFetching) {
+  if (isGaugeFetching || isVoteFetching) {
     return <span className="text-xs text-muted-foreground">Loading votes...</span>;
   }
   if (pools.length === 0) {
     return (
       <span className="text-xs text-muted-foreground">
-        Voted this epoch: {voted ? "Yes" : "No"} · No voted pools.
+        Voted this epoch: {voted ? "Yes" : "No"} · No pools configured.
       </span>
     );
   }
@@ -141,7 +142,7 @@ function PoolVotes({ tokenAddress, onCopy, shorten }: PoolVotesProps) {
       <span className={voted ? "text-emerald-600" : "text-red-600"}>{voted ? "Voted" : "Not voted"}</span>
       {voted ? (
         <ul className="list-disc pl-6">
-          {pools.map((pool) => (
+          {votedPools.map((pool) => (
             <li key={pool.address}>
               <code className="border border-input rounded px-2 py-1" onClick={() => onCopy(pool.address)}>
                 {shorten(pool.address)}
@@ -155,19 +156,19 @@ function PoolVotes({ tokenAddress, onCopy, shorten }: PoolVotesProps) {
           <div className="text-[11px] text-muted-foreground">Leave weight empty to skip a pool.</div>
           <ul className="flex flex-col gap-2">
             {pools.map((pool) => (
-              <li key={pool.address} className="flex items-center justify-between gap-2">
-                <code className="border border-input rounded px-2 py-1" onClick={() => onCopy(pool.address)}>
-                  {shorten(pool.address)}
+              <li key={pool} className="flex items-center justify-between gap-2">
+                <code className="border border-input rounded px-2 py-1" onClick={() => onCopy(pool)}>
+                  {shorten(pool)}
                 </code>
                 <Input
                   className="h-7 w-24 text-xs"
                   inputMode="numeric"
                   placeholder="Weight"
-                  value={weightInputs[pool.address] ?? ""}
+                  value={weightInputs[pool] ?? ""}
                   onChange={(event) => {
                     const nextValue = event.target.value;
                     if (nextValue === "" || /^\d+$/.test(nextValue)) {
-                      setWeightInputs((prev) => ({ ...prev, [pool.address]: nextValue }));
+                      setWeightInputs((prev) => ({ ...prev, [pool]: nextValue }));
                     }
                   }}
                 />
