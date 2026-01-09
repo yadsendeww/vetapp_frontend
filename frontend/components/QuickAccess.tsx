@@ -82,7 +82,7 @@ export function QuickAccess() {
       <b>Packages:</b>
       <a
         className="underline underline-offset-4"
-        href={`https://explorer.aptoslabs.com/account/${TAPP_ACCOUNT_ADDRESS ?? ""}/modules/packages`}
+        href={`https://explorer.aptoslabs.com/account/${TAPP_ACCOUNT_ADDRESS ?? ""}`}
         target="_blank"
         rel="noreferrer"
       >
@@ -90,7 +90,7 @@ export function QuickAccess() {
       </a>
       <a
         className="underline underline-offset-4"
-        href={`https://explorer.aptoslabs.com/account/${AMM_ACCOUNT_ADDRESS ?? ""}/modules/packages`}
+        href={`https://explorer.aptoslabs.com/account/${AMM_ACCOUNT_ADDRESS ?? ""}`}
         target="_blank"
         rel="noreferrer"
       >
@@ -98,7 +98,7 @@ export function QuickAccess() {
       </a>
       <a
         className="underline underline-offset-4"
-        href={`https://explorer.aptoslabs.com/account/${STABLE_ACCOUNT_ADDRESS ?? ""}/modules/packages`}
+        href={`https://explorer.aptoslabs.com/account/${STABLE_ACCOUNT_ADDRESS ?? ""}`}
         target="_blank"
         rel="noreferrer"
       >
@@ -106,7 +106,7 @@ export function QuickAccess() {
       </a>
       <a
         className="underline underline-offset-4"
-        href={`https://explorer.aptoslabs.com/account/${VETAPP_ACCOUNT_ADDRESS ?? ""}/modules/packages`}
+        href={`https://explorer.aptoslabs.com/account/${VETAPP_ACCOUNT_ADDRESS ?? ""}`}
         target="_blank"
         rel="noreferrer"
       >
@@ -114,7 +114,7 @@ export function QuickAccess() {
       </a>
       <a
         className="underline underline-offset-4"
-        href={`https://explorer.aptoslabs.com/account/${GAUGE_ACCOUNT_ADDRESS ?? ""}/modules/packages`}
+        href={`https://explorer.aptoslabs.com/account/${GAUGE_ACCOUNT_ADDRESS ?? ""}`}
         target="_blank"
         rel="noreferrer"
       >
