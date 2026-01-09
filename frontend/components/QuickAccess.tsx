@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import { useQuery } from "@tanstack/react-query";
-import { AMM_ACCOUNT_ADDRESS, GAUGE_ACCOUNT_ADDRESS, TAPP_ACCOUNT_ADDRESS, VETAPP_ACCOUNT_ADDRESS } from "@/constants";
+import { AMM_ACCOUNT_ADDRESS, GAUGE_ACCOUNT_ADDRESS, STABLE_ACCOUNT_ADDRESS, TAPP_ACCOUNT_ADDRESS, VETAPP_ACCOUNT_ADDRESS } from "@/constants";
 import { toast } from "@/components/ui/use-toast";
 import { faucetQuickMint } from "@/entry-functions/faucetQuickMint";
 import { aptosClient } from "@/utils/aptosClient";
@@ -50,8 +50,8 @@ export function QuickAccess() {
   };
 
   return (
-    <div className="text-xs text-muted-foreground flex flex-wrap gap-3">
-      Packages:
+    <div className="text-xs flex flex-wrap gap-3">
+      <b>Packages:</b>
       <a
         className="underline underline-offset-4"
         href={`https://explorer.aptoslabs.com/account/${TAPP_ACCOUNT_ADDRESS ?? ""}/modules/packages`}
@@ -59,6 +59,22 @@ export function QuickAccess() {
         rel="noreferrer"
       >
         Tap Router
+      </a>
+      <a
+        className="underline underline-offset-4"
+        href={`https://explorer.aptoslabs.com/account/${AMM_ACCOUNT_ADDRESS ?? ""}/modules/packages`}
+        target="_blank"
+        rel="noreferrer"
+      >
+        AMM
+      </a>
+      <a
+        className="underline underline-offset-4"
+        href={`https://explorer.aptoslabs.com/account/${STABLE_ACCOUNT_ADDRESS ?? ""}/modules/packages`}
+        target="_blank"
+        rel="noreferrer"
+      >
+        STABLE
       </a>
       <a
         className="underline underline-offset-4"
@@ -78,28 +94,28 @@ export function QuickAccess() {
       </a>
       <a
         className="underline underline-offset-4"
-        href={`https://explorer.aptoslabs.com/account/${AMM_ACCOUNT_ADDRESS ?? ""}/modules/packages`}
-        target="_blank"
-        rel="noreferrer"
-      >
-        AMM
-      </a>
-
-      Others:
-      <a
-        className="underline underline-offset-4"
         href={`https://explorer.aptoslabs.com/account/${tappTokenAddress ?? ""}/resources`}
         target="_blank"
         rel="noreferrer"
       >
         $TAPP
       </a>
+      <b>Faucet: </b>
       <a
         className="underline underline-offset-4"
+        href={""}
         rel="noreferrer"
-        onClick={onQuickMint} 
+        onClick={(e)=> { e.preventDefault(); onQuickMint() }}
       >
-        FAUCET
+        Dispense $TAPP
+      </a>
+      <a
+        className="underline underline-offset-4"
+        href={""}
+        rel="noreferrer"
+        onClick={(e)=> { e.preventDefault(); onQuickMint() }}
+      >
+        Dispense tokens (USDT, BTC...)
       </a>
     </div>
   );
